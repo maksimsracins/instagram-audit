@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instagram konta audits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Onest:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a torn-paper editorial sheet in a dark frame; giant marquee type behind a scanned phone, then the audit tool and worked examples. */
+:root{
+  --paper:#f4ede1;
+  --paper-2:#e9dfcd;
+  --ink:#24170f;
+  --ink-soft:#6e5d4e;
+  --frame:#1d120b;
+  --accent:#d6362c;
+  --warn:#c98a12;
+  --good:#4c7a3c;
+  --line:rgba(36,23,15,.16);
+  --f-display:"Cormorant","Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --f-body:"Onest","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--frame);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.sheet{margin:12px;background:var(--paper);position:relative;overflow:hidden;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .14  0 0 0 0 .09  0 0 0 0 .06  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1;text-wrap:balance;margin:0}
+
+/* nav */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px clamp(16px,4vw,40px);position:relative;z-index:10}
+.brand{font-family:var(--f-display);font-size:22px;font-weight:600;letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
+.brand sup{font-family:var(--f-mono);font-size:9px;margin-left:2px}
+.nav-links{display:flex;gap:26px;align-items:center;font-size:14px}
+.nav-links a{color:var(--ink);text-decoration:none;position:relative}
+.nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.nav-links a:hover::after{transform:scaleX(1)}
+.nav-links a.btn{color:var(--paper)} .nav-links a.btn::after{display:none}
+.lang{display:flex;border:1px solid var(--ink);border-radius:99px;overflow:hidden}
+.lang button{border:0;background:none;padding:5px 11px;cursor:pointer;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* hero stage */
+.stage{position:relative;height:clamp(440px,50vw,620px);margin-top:-6px}
+.row{position:absolute;left:0;right:0;white-space:nowrap;pointer-events:none;font-family:var(--f-display);font-weight:700;font-size:clamp(108px,17vw,250px);line-height:.8;letter-spacing:-.035em;text-transform:uppercase}
+.row .track{display:inline-flex;will-change:transform;animation:mq 38s linear infinite}
+.row .track span{padding-right:.28em}
+.r1{top:22%;z-index:1;color:var(--ink)}
+.r2{top:45%;z-index:4;color:transparent;-webkit-text-stroke:1.3px var(--ink);opacity:.85}
+.r2 .track{animation-direction:reverse;animation-duration:46s}
+@keyframes mq{to{transform:translateX(-50%)}}
+.card{position:absolute;left:50%;top:50%;width:clamp(230px,24vw,300px);aspect-ratio:3/4.15;z-index:3;
+  transform:translate(-50%,-50%) rotate(var(--rz,-1.5deg)) perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition:transform .25s ease-out;background:linear-gradient(160deg,#a8794f,#6d4a2e 55%,#3d2817);padding:18px 16px;filter:drop-shadow(0 18px 30px rgba(29,18,11,.35))}
+.phone{height:100%;background:#fffaf2;border-radius:22px;padding:14px 12px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.ph-top{display:flex;align-items:center;gap:10px}
+.ava{width:46px;height:46px;border-radius:50%;padding:2px;background:conic-gradient(from 200deg,#f7b42c,#e5243b,#a33ea1,#f7b42c);flex:none}
+.ava i{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:#e8d9c3;border:2px solid #fffaf2;font-style:normal;font-family:var(--f-display);font-weight:700;font-size:18px;color:var(--ink)}
+.ph-stats{display:flex;gap:10px;flex:1;justify-content:space-around;text-align:center;font-size:10px;line-height:1.2;color:var(--ink-soft)}
+.ph-stats b{display:block;font-size:13px;color:var(--ink)}
+.ph-handle{font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:6px;border-radius:4px;background:#e7dccb}
+.ph-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:auto}
+.ph-grid i{aspect-ratio:1;border-radius:2px;display:block}
+.scan{position:absolute;left:0;right:0;height:70px;top:-70px;background:linear-gradient(180deg,transparent,rgba(214,54,44,.16) 80%,rgba(214,54,44,.9) 98%,transparent);animation:scan 3.4s cubic-bezier(.5,0,.5,1) infinite}
+@keyframes scan{0%{top:-70px}100%{top:100%}}
+.sticker{position:absolute;z-index:5;background:#fffaf2;padding:9px 12px 9px 26px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.02em;box-shadow:0 8px 18px rgba(29,18,11,.18);max-width:200px;line-height:1.35;animation:bob 5s ease-in-out infinite}
+.sticker::before{content:"";position:absolute;left:10px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.sticker.w::before{background:var(--warn)} .sticker.g::before{background:var(--good)}
+.sticker::after{content:"";position:absolute;top:-8px;left:50%;width:46px;height:15px;background:rgba(233,223,205,.85);transform:translateX(-50%) rotate(-4deg)}
+.s1{left:calc(50% + 150px);top:18%;transform:rotate(3deg)}
+.s2{left:calc(50% - 360px);top:62%;transform:rotate(-4deg);animation-delay:-1.6s}
+.s3{left:calc(50% + 170px);top:70%;transform:rotate(-2deg);animation-delay:-3s}
+@keyframes bob{50%{translate:0 -6px}}
+.corner{position:absolute;right:clamp(16px,4vw,40px);bottom:18px;z-index:5;font-size:11px}
+.badge{position:absolute;left:clamp(10px,3vw,34px);bottom:10px;z-index:6;width:118px;height:118px;border-radius:50%;background:#fffaf2;box-shadow:0 10px 24px rgba(29,18,11,.2);display:grid;place-items:center}
+.badge svg{position:absolute;inset:0;animation:spin 18s linear infinite}
+.badge text{font-family:var(--f-mono);font-size:9.6px;letter-spacing:.14em;fill:var(--ink)}
+.badge b{font-family:var(--f-display);font-size:30px;line-height:1;text-align:center}
+.badge b small{display:block;font-family:var(--f-mono);font-size:9px;font-weight:400;letter-spacing:.1em}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.hero-copy{display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(24px,5vw,72px);align-items:end;padding:40px 0 64px}
+.hero-copy h1{font-size:clamp(44px,6.4vw,92px);font-weight:600;letter-spacing:-.02em}
+.hero-copy h1 em{font-style:italic;color:var(--accent);font-weight:500}
+.eyebrow{display:inline-block;margin-bottom:18px}
+.lead{font-size:17px;color:var(--ink-soft);max-width:44ch;margin:0 0 22px}
+.go{display:flex;border:1.5px solid var(--ink);border-radius:999px;background:#fffaf2;padding:6px;gap:6px;transition:box-shadow .2s}
+.go:focus-within{box-shadow:0 0 0 4px rgba(214,54,44,.18)}
+.go input{flex:1;min-width:0;border:0;background:none;padding:10px 14px;font-size:16px;outline:none}
+.btn{border:0;border-radius:999px;background:var(--ink);color:var(--paper);padding:13px 22px;font-weight:600;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s,transform .15s;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--accent)} .btn:active{transform:scale(.97)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper)}
+.btn .arr{transition:transform .2s} .btn:hover .arr{transform:translateX(3px)}
+.hint{font-size:13px;color:var(--ink-soft);margin-top:10px;min-height:20px}
+.hint.err{color:var(--accent)}
+
+.ticker{background:var(--ink);color:var(--paper);overflow:hidden;white-space:nowrap;padding:14px 0;transform:rotate(-1.2deg);margin:0 -20px}
+.ticker .track{display:inline-flex;animation:mq 30s linear infinite;font-family:var(--f-display);font-size:28px;font-style:italic}
+.ticker span{padding:0 22px}
+.ticker span::after{content:"✳";font-style:normal;color:var(--accent);margin-left:44px;font-size:18px;vertical-align:middle}
+
+section{scroll-margin-top:20px}
+.sec{padding:clamp(70px,9vw,120px) 0}
+.sec-head{display:grid;grid-template-columns:auto 1fr;gap:12px 40px;align-items:end;margin-bottom:44px}
+.sec-head h2{font-size:clamp(42px,6vw,84px);letter-spacing:-.02em}
+.sec-head p{max-width:52ch;color:var(--ink-soft);margin:0;justify-self:end}
+.kicker{grid-column:1/-1}
+
+/* tool */
+.tool{display:grid;grid-template-columns:.8fr 1.2fr;gap:clamp(24px,4vw,56px);align-items:start}
+.tool-side{position:sticky;top:20px;display:flex;flex-direction:column;gap:16px}
+.tool-side ul{list-style:none;padding:0;margin:0;border-top:1px solid var(--line)}
+.tool-side li{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:baseline}
+.tool-side li .mono{color:var(--accent)}
+.panel{background:#fffaf2;border:1.5px solid var(--ink);padding:clamp(20px,3.4vw,38px);position:relative;min-height:470px;box-shadow:10px 10px 0 var(--ink)}
+.q-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+.handle-pill{font-family:var(--f-mono);font-size:12px;background:var(--paper-2);padding:5px 10px;border-radius:99px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prog{height:3px;background:var(--paper-2);margin-bottom:30px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);transition:width .45s cubic-bezier(.3,.7,.2,1)}
+.q h3{font-size:clamp(30px,3.6vw,46px);letter-spacing:-.01em;margin-bottom:8px}
+.q .qh{color:var(--ink-soft);font-size:14px;margin:0 0 22px}
+.q-anim{animation:qin .45s cubic-bezier(.3,.7,.2,1)}
+@keyframes qin{from{opacity:.0;transform:translateY(14px)}}
+.bignum{width:100%;border:0;border-bottom:2px solid var(--ink);background:none;font-family:var(--f-display);font-size:clamp(54px,7vw,88px);font-weight:600;padding:4px 0;outline:none;letter-spacing:-.02em}
+.bignum::placeholder{color:#cbbda9}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{border:1.5px solid var(--ink);border-radius:999px;background:none;padding:11px 18px;cursor:pointer;font-size:15px;transition:background .15s,color .15s,transform .15s}
+.chip:hover{transform:translateY(-2px)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent)}
+.q-nav{display:flex;justify-content:space-between;align-items:center;margin-top:34px;gap:10px}
+.q-nav .hint{margin:0}
+.scanning{display:flex;flex-direction:column;gap:14px;padding-top:30px}
+.scanning h3{font-size:44px;margin-bottom:10px}
+.sline{display:flex;gap:12px;align-items:center;opacity:.3;transition:opacity .3s;font-size:16px}
+.sline.on{opacity:1}
+.sline i{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);flex:none;position:relative}
+.sline.on i{border-color:var(--accent);border-top-color:transparent;animation:spin .7s linear infinite}
+.sline.done i{animation:none;background:var(--ink);border-color:var(--ink)}
+.sline.done i::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--paper);border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+/* result */
+.res-head{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;margin-bottom:28px}
+.ring{position:relative;width:150px;height:150px}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-family:var(--f-display);font-weight:700;font-size:56px;line-height:.9;font-variant-numeric:tabular-nums}
+.ring .num small{display:block;font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.1em;color:var(--ink-soft)}
+.res-head h3{font-size:clamp(30px,3.4vw,42px);margin:8px 0}
+.metrics{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.metric{background:var(--paper-2);padding:7px 11px;font-size:13px;border-radius:6px}
+.metric b{font-variant-numeric:tabular-nums}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:12px 26px;margin:6px 0 30px}
+.cat{font-size:14px}
+.cat-top{display:flex;justify-content:space-between;margin-bottom:5px}
+.cat-top b{font-variant-numeric:tabular-nums}
+.cbar{height:8px;background:var(--paper-2);border-radius:5px;overflow:hidden}
+.cbar i{display:block;height:100%;width:0;border-radius:5px;transition:width 1s cubic-bezier(.3,.7,.2,1)}
+.lo{background:var(--accent)} .mid{background:var(--warn)} .hi{background:var(--good)}
+.finds{display:flex;flex-direction:column;gap:12px}
+.find{border-left:4px solid var(--accent);background:var(--paper);padding:14px 16px}
+.find.warn{border-color:var(--warn)} .find.good{border-color:var(--good)}
+.find h4{margin:6px 0 4px;font-size:17px;line-height:1.3}
+.find p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+.find .do{margin-top:8px;color:var(--ink);font-size:14.5px}
+.find .do b{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:6px;color:var(--accent)}
+.sev{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:var(--accent);color:#fff}
+.sev.warn{background:var(--warn)} .sev.good{background:var(--good)}
+.sub-h{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+.sub-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.disc{font-size:13px;color:var(--ink-soft);margin:24px 0 18px;padding:12px 14px;background:var(--paper-2)}
+.res-actions{display:flex;flex-wrap:wrap;gap:10px}
+
+/* examples */
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
+.tab{text-align:left;border:1.5px solid var(--ink);background:none;padding:16px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;transition:background .2s,color .2s,transform .2s}
+.tab:hover{transform:translateY(-3px)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.tab .t-h{font-weight:600;font-size:15px}
+.tab .t-n{font-size:12.5px;opacity:.7}
+.tab .t-s{font-family:var(--f-display);font-size:38px;font-weight:700;line-height:1}
+.report{background:#fffaf2;border:1.5px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:clamp(18px,3.4vw,40px);animation:qin .5s cubic-bezier(.3,.7,.2,1)}
+.rep-top{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.rep-top .ava{width:76px;height:76px}
+.rep-top .ava i{font-size:28px}
+.rep-id h3{font-size:clamp(28px,3.4vw,44px);letter-spacing:-.01em}
+.tag{display:inline-block;background:var(--paper-2);padding:3px 9px;border-radius:99px;margin-bottom:8px}
+.rep-stats{display:flex;gap:22px;margin-top:10px;font-size:13px;color:var(--ink-soft);flex-wrap:wrap}
+.rep-stats b{display:block;font-family:var(--f-display);font-size:26px;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.rep-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(22px,4vw,48px)}
+.posts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.post{aspect-ratio:4/5;border:0;cursor:pointer;position:relative;padding:8px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;color:#fffaf2;text-align:left;transition:transform .2s,box-shadow .2s;overflow:hidden}
+.post:hover{transform:scale(1.03)}
+.post[aria-pressed="true"]{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--accent)}
+.post .pt{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:rgba(29,18,11,.55);padding:2px 6px;border-radius:3px}
+.post .pv{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.post .pv small{display:block;font-family:var(--f-mono);font-size:9px;font-weight:400;letter-spacing:.06em;opacity:.85}
+.post .heat{position:absolute;right:8px;top:8px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,250,242,.8)}
+.post.has-note::after{content:"";position:absolute;right:7px;bottom:7px;width:16px;height:16px;border-radius:50%;background:#fffaf2 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 4v8M4 8h8' stroke='%2324170f' stroke-width='1.6'/></svg>") center/12px no-repeat}
+.note{margin-top:12px;background:var(--paper);padding:14px 16px;min-height:76px;font-size:14.5px;border-left:4px solid var(--ink)}
+.note .mono{color:var(--ink-soft);display:block;margin-bottom:4px}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink-soft);margin:10px 0 0}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.bio-sw{display:inline-flex;border:1.5px solid var(--ink);border-radius:99px;padding:3px;gap:2px}
+.bio-sw button{border:0;background:none;border-radius:99px;padding:5px 14px;cursor:pointer;font-size:13px}
+.bio-sw button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.bio-box{margin-top:12px;background:var(--paper);padding:16px 18px;white-space:pre-line;font-size:15px;line-height:1.5;position:relative;min-height:110px;transition:background .3s}
+.bio-box.after{background:#eef3e6}
+.bio-box .who{font-weight:600;display:block;margin-bottom:4px}
+.plan{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px}
+.wk{border-top:3px solid var(--ink);padding-top:10px;font-size:14px}
+.wk .mono{color:var(--accent);display:block;margin-bottom:4px}
+.rep-full{grid-column:1/-1}
+
+/* how */
+.deliv{display:grid;grid-template-columns:repeat(3,1fr);border-top:1.5px solid var(--ink);border-left:1.5px solid var(--ink)}
+.dv{border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:26px 24px 30px;position:relative;transition:background .25s,color .25s;min-height:200px}
+.dv:hover{background:var(--ink);color:var(--paper)}
+.dv:hover p{color:#cdbfae}
+.dv .n{font-family:var(--f-display);font-size:64px;font-weight:700;line-height:.8;color:transparent;-webkit-text-stroke:1.2px currentColor;display:block;margin-bottom:18px}
+.dv h3{font-size:30px;margin-bottom:8px}
+.dv p{margin:0;color:var(--ink-soft);font-size:15px}
+.format{margin-top:22px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+
+/* price */
+.price{display:grid;grid-template-columns:.9fr 1.1fr;gap:clamp(24px,5vw,64px);align-items:start}
+.p-big{font-family:var(--f-display);font-weight:700;font-size:clamp(110px,14vw,190px);line-height:.8;letter-spacing:-.04em}
+.p-old{font-family:var(--f-display);font-size:42px;text-decoration:line-through;text-decoration-color:var(--accent);color:var(--ink-soft);margin-right:12px}
+.form{display:grid;gap:16px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--ink);background:#fffaf2;padding:12px 14px;border-radius:0;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{box-shadow:4px 4px 0 var(--accent)}
+.field textarea{min-height:90px;resize:vertical}
+.done{background:#fffaf2;border:1.5px solid var(--ink);padding:22px;box-shadow:8px 8px 0 var(--good)}
+.done h3{font-size:36px;margin-bottom:6px}
+.done pre{white-space:pre-wrap;background:var(--paper);padding:14px;font-family:var(--f-mono);font-size:13px;margin:14px 0}
+.done .acts{display:flex;gap:10px;flex-wrap:wrap}
+
+footer{border-top:1.5px solid var(--ink);padding:26px 0 30px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-soft)}
+.big-foot{font-family:var(--f-display);font-weight:700;font-size:clamp(70px,15vw,220px);line-height:.78;letter-spacing:-.04em;white-space:nowrap;color:transparent;-webkit-text-stroke:1.3px var(--ink);text-align:center;padding-top:30px;overflow:hidden}
+
+@media (max-width:900px){
+  .nav-links a:not(.cta-link){display:none}
+  .hero-copy,.tool,.price,.rep-grid{grid-template-columns:1fr}
+  .tool-side{position:static}
+  .tabs{grid-template-columns:1fr}
+  .deliv{grid-template-columns:1fr 1fr}
+  .sec-head{grid-template-columns:1fr}.sec-head p{justify-self:start}
+  .s2{display:none}
+  .s1{left:auto;right:12px;top:8%}
+  .s3{left:12px;top:auto;bottom:150px}
+  .plan{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .stage{height:480px}
+  .badge{width:96px;height:96px}.badge b{font-size:24px}
+  .s3{display:none}
+  .cats{grid-template-columns:1fr}
+  .res-head{grid-template-columns:1fr;justify-items:start}
+  .rep-top{grid-template-columns:auto 1fr}
+  .rep-top .ring{grid-column:1/-1}
+  .deliv{grid-template-columns:1fr}
+  .go{flex-direction:column;border-radius:22px}
+  .go .btn{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<nav class="nav" aria-label="Galvenā navigācija">
+  <a class="brand" href="#top" data-t="brand">Profila Audits</a>
+  <div class="nav-links">
+    <a href="#piemeri" data-t="nav_ex">Piemēri</a>
+    <a href="#kas-iekša" data-t="nav_how">Kas iekšā</a>
+    <a href="#pasutit" data-t="nav_price">Cena</a>
+    <a href="#pasutit" class="btn cta-link" style="padding:9px 16px;font-size:13px" data-t="nav_cta">Pasūtīt auditu</a>
+    <div class="lang" role="group" aria-label="Valoda">
+      <button type="button" data-lang="lv" aria-pressed="true">LV</button>
+      <button type="button" data-lang="ru" aria-pressed="false">RU</button>
+    </div>
+  </div>
+</nav>
+
+<header id="top">
+  <div class="stage" id="stage">
+    <div class="row r1" aria-hidden="true"><div class="track" id="mq1"></div></div>
+    <div class="card torn" id="heroCard" aria-hidden="true">
+      <div class="phone">
+        <div class="scan"></div>
+        <div class="ph-top">
+          <div class="ava"><i id="heroInit">T</i></div>
+          <div class="ph-stats"><div><b>84</b>posts</div><div><b>1 260</b>followers</div><div><b>312</b>following</div></div>
+        </div>
+        <div class="ph-handle" id="heroHandle">@tavs.konts</div>
+        <div class="bar" style="width:86%"></div><div class="bar" style="width:64%"></div><div class="bar" style="width:40%;background:#f1c9c4"></div>
+        <div class="ph-grid" id="heroGrid"></div>
+      </div>
+    </div>
+    <div class="row r2" aria-hidden="true"><div class="track" id="mq2"></div></div>
+    <div class="sticker s1" aria-hidden="true" data-t="st1">Bio bez aicinājuma rīkoties</div>
+    <div class="sticker g s2" aria-hidden="true" data-t="st2">Reels sasniedz 3× vairāk</div>
+    <div class="sticker w s3" aria-hidden="true" data-t="st3">Publicē neregulāri</div>
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 118 118" width="100%" height="100%"><defs><path id="circ" d="M59,59 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs><text><textPath href="#circ" id="badgeTxt">BEZMAKSAS EKSPRESS AUDITS • 2 MINŪTES • </textPath></text></svg>
+      <b>2<small data-t="badge_c">MIN</small></b>
+    </div>
+    <div class="corner mono" data-t="corner">RĪGA, LATVIJA</div>
+  </div>
+
+  <div class="wrap hero-copy">
+    <div>
+      <span class="eyebrow mono" data-t="hero_eyebrow">Instagram konta audits · Rīga</span>
+      <h1 data-th="hero_h">Uzzini, kas <em>bremzē</em> tavu Instagram</h1>
+    </div>
+    <div>
+      <p class="lead" data-t="hero_p"></p>
+      <form class="go" id="heroForm" novalidate>
+        <label for="heroInput" class="mono" style="position:absolute;left:-9999px" data-t="f_ig">Instagram saite</label>
+        <input id="heroInput" type="text" autocomplete="off" spellcheck="false" data-tp="hero_ph" placeholder="instagram.com/tavs.konts">
+        <button class="btn" type="submit"><span data-t="hero_btn">Sākt auditu</span> <span class="arr">→</span></button>
+      </form>
+      <div class="hint" id="heroHint" data-t="hero_note">Neprasām paroli. Tikai saiti.</div>
+    </div>
+  </div>
+  <div class="ticker" aria-hidden="true"><div class="track" id="tick"></div></div>
+</header>
+
+<main>
+<section class="sec" id="audits">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="mono kicker" data-t="tool_k">01 — Ekspress-audits</span>
+      <h2 data-t="tool_h">Tavs konts skaitļos</h2>
+      <p data-t="tool_p"></p>
+    </div>
+    <div class="tool">
+      <aside class="tool-side">
+        <span class="mono" data-t="side_h">Ko tu saņemsi</span>
+        <ul id="sideList"></ul>
+      </aside>
+      <div class="panel" id="panel" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="piemeri" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="mono kicker" data-t="ex_k">02 — Piemēri</span>
+      <h2 data-t="ex_h">Šādi izskatās pilnais audits</h2>
+      <p data-t="ex_p"></p>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div id="report" role="tabpanel"></div>
+  </div>
+</section>
+
+<section class="sec" id="kas-iekša" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="mono kicker" data-t="how_k">03 — Pilnais audits</span>
+      <h2 data-t="how_h">Ko tu saņem</h2>
+      <p data-t="how_p"></p>
+    </div>
+    <div class="deliv" id="deliv"></div>
+    <div class="format">
+      <span class="mono" data-t="how_fmt">20 min video pārskats + PDF · 48 stundu laikā</span>
+      <a href="#pasutit" class="btn"><span data-t="nav_cta">Pasūtīt auditu</span> <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="pasutit" style="padding-top:0">
+  <div class="wrap price">
+    <div>
+      <span class="mono" data-t="pr_k">04 — Cena</span>
+      <h2 style="font-size:clamp(42px,6vw,84px);margin:14px 0 26px" data-t="pr_h">Pasūti savu auditu</h2>
+      <div><span class="p-old">69 €</span></div>
+      <div class="p-big">39 €</div>
+      <p class="lead" style="margin-top:18px" data-t="pr_note"></p>
+    </div>
+    <div id="orderBox">
+      <form class="form" id="orderForm" novalidate>
+        <div class="field"><label for="oIg" data-t="f_ig">Instagram saite</label><input id="oIg" type="text" autocomplete="off" data-tp="hero_ph"></div>
+        <div class="field"><label for="oContact" data-t="f_contact">Kā ar tevi sazināties</label><input id="oContact" type="text" data-tp="f_contact_ph"></div>
+        <div class="field"><label for="oGoal" data-t="f_goal">Galvenais mērķis</label><select id="oGoal"></select></div>
+        <div class="field"><label for="oMsg" data-t="f_msg">Ko vēl vajadzētu zināt</label><textarea id="oMsg" data-tp="f_msg_ph"></textarea></div>
+        <div class="q-nav" style="margin-top:4px"><span class="hint" id="oHint"></span><button class="btn" type="submit"><span data-t="f_btn">Sagatavot pieteikumu</span> <span class="arr">→</span></button></div>
+      </form>
+      <div id="doneBox" hidden></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap">
+  <div class="big-foot" aria-hidden="true">AUDITS</div>
+  <footer>
+    <span data-t="foot1">© 2026 Profila Audits · Rīga</span>
+    <span data-t="foot2"></span>
+  </footer>
+</div>
+</div>
+
+<script>
+/* ===== Config: the Instagram account that receives audit requests ===== */
+const CONTACT_IG = "nesterova.eleonora";
+
+const T = {
+lv:{
+ brand:"Profila Audits",nav_ex:"Piemēri",nav_how:"Kas iekšā",nav_price:"Cena",nav_cta:"Pasūtīt auditu",
+ mq_word:"AUDITS",mq_default:"@TAVS.KONTS",
+ hero_eyebrow:"Instagram konta audits · Rīga",
+ hero_h:"Uzzini, kas <em>bremzē</em> tavu Instagram",
+ hero_p:"Ievadi profila saiti, atbildi uz 7 ātriem jautājumiem un saņem ekspress-auditu: vērtējumu, vājās vietas un soļus šai nedēļai. Bez maksas, 2 minūtes.",
+ hero_ph:"instagram.com/tavs.konts",hero_btn:"Sākt auditu",
+ hero_err:"Ievadi Instagram saiti vai lietotājvārdu, piemēram, @tavs.konts",
+ hero_note:"Neprasām paroli. Tikai saiti.",corner:"RĪGA, LATVIJA",
+ badge_txt:"BEZMAKSAS EKSPRESS AUDITS • 2 MINŪTES • ",badge_c:"MIN",
+ st1:"Bio bez aicinājuma rīkoties",st2:"Reels sasniedz 3× vairāk",st3:"Publicē neregulāri",
+ tick:["Bio un pirmais iespaids","Sasniedzamība","Iesaiste","Regularitāte","Reels un formāti","Ceļš līdz pirkumam"],
+ tool_k:"01 — Ekspress-audits",tool_h:"Tavs konts skaitļos",
+ tool_p:"Skaitļi atrodami Instagram statistikā: Professional dashboard → Insights. Ja precīzi nezini, raksti aptuveni.",
+ side_h:"Ko tu saņemsi",side:["Vērtējums no 0 līdz 100","6 jomas ar atsevišķu vērtējumu","Kas bremzē visvairāk","Soļi, ko izdarīt šonedēļ"],
+ q_handle_ph:"@tavs.konts",q_start:"Ar kuru kontu sākam?",q_start_h:"Ievadi Instagram saiti vai lietotājvārdu.",
+ q1:"Cik tev ir sekotāju?",q2:"Cik skatījumu vidēji savāc viens Reels?",q2h:"Paskaties pēdējos 6–9 Reels un novērtē vidējo. Ja Reels netaisi, raksti foto sasniedzamību.",
+ q3:"Cik patīk vidēji saņem viena publikācija?",q3h:"Vidēji pēdējās 9 publikācijās.",
+ q4:"Cik bieži tu publicē?",q4o:["0–1 reizi nedēļā","2–3 reizes nedēļā","4–6 reizes nedēļā","Katru dienu"],
+ q5:"Kas jau ir tavā profilā?",q5h:"Atzīmē visu, kas ir. Ja nekā no šī nav, spied “Tālāk”.",
+ q5o:["Skaidrs, kas tu esi","Ko tu piedāvā","Aicinājums rīkoties","Saite (pieraksts, veikals)","Sakārtoti Highlights"],
+ q5short:["kas tu esi","ko tu piedāvā","aicinājums rīkoties","saite","sakārtoti Highlights"],
+ q6:"Kāds saturs tev dominē?",q6o:["Galvenokārt foto","Galvenokārt Reels","Karuseļi","Viss pa druskai"],
+ q7:"Kāds ir tavs galvenais mērķis?",q7o:["Pārdošana","Pieraksti un klienti","Atpazīstamība","Personīgais blogs"],
+ back:"← Atpakaļ",next:"Tālāk →",show:"Parādīt rezultātu",of:"no",
+ need:"Ievadi skaitli, lai turpinātu",pick:"Izvēlies vienu variantu",
+ scan_h:"Analizējam…",scan:["Salīdzinām skatījumus ar sekotāju skaitu","Rēķinām iesaistes līmeni","Pārbaudām profila pirmo iespaidu","Sastādām soļus šai nedēļai"],
+ res_k:"Ekspress-vērtējums",lvl:["Konts bremzē","Ir potenciāls, bet daudz noplūžu","Labs pamats","Spēcīgs konts"],
+ cats:["Sasniedzamība","Iesaiste","Regularitāte","Profils un bio","Formāti","Ceļš līdz pirkumam"],
+ m_reach:"Reels sasniedzamība",m_reach_n:"no sekotājiem · labi: 50%+",m_eng:"Iesaiste",m_eng_n:"· labi: 3%+",
+ f_h:"Kas bremzē visvairāk",w_h:"Kas jau strādā",do:"Ko darīt",
+ sev:{crit:"Kritiski",warn:"Svarīgi",good:"Strādā"},
+ disc:"Ekspress-audits balstās tikai uz tavām atbildēm. Pilnajā auditā cilvēks izskata tavu profilu, publikācijas un konkurentus un atrod to, ko skaitļi neparāda.",
+ res_cta:"Gribu pilno auditu",restart:"Sākt no jauna",
+ r_reach_t:"Reels redz tikai {p}% sekotāju",r_reach_w:"Algoritms tavus video nerāda pat katram otrajam sekotājam. Visbiežāk vaina ir pirmajās 2 sekundēs.",r_reach_d:"Nākamajiem 3 Reels: teksts uz ekrāna jau pirmajā kadrā un kustība līdz 1. sekundei. Salīdzini, kurš sākums notur skatītāju.",
+ r_eng_t:"Cilvēki skatās, bet nereaģē",r_eng_w:"Iesaiste ir {p}%. Bez patīk un komentāriem algoritms nesaprot, kam vēl rādīt tavu saturu.",r_eng_d:"Beidz katru publikāciju ar jautājumu, uz kuru var atbildēt ar vienu vārdu vai emoji.",
+ r_reg_t:"Starp publikācijām algoritms tevi aizmirst",r_reg_w:"Retas publikācijas nozīmē, ka katrs video sāk no nulles.",r_reg_d:"Izvēlies ritmu, ko noturēsi mēnesi: 3 publikācijas nedēļā fiksētās dienās. Filmē vairākus video vienā dienā.",
+ r_bio_t:"Profilā trūkst: {list}",r_bio_w:"Jauns cilvēks profilā pavada ap 3 sekundēm. Ja viņš nesaprot, kas tu esi un ko darīt tālāk, viņš aiziet.",r_bio_d:"Pārraksti bio pēc formulas: kam tu palīdzi → ar ko → ko darīt tagad (saite vai Direct).",
+ r_fmt_t:"Tikai foto neatved jaunus cilvēkus",r_fmt_w:"Foto galvenokārt redz esošie sekotāji. Jauna auditorija nāk caur Reels un karuseļiem.",r_fmt_d:"Pārvērt 3 labākos foto karuselī vai Reels ar balss komentāru.",
+ r_sales_t:"Nav skaidra ceļa līdz pirkumam",r_sales_w:"Pat ja saturs patīk, cilvēkam jāmeklē, kā nopirkt vai pierakstīties. Lielākā daļa to nedara.",r_sales_d:"Viena saite ar vienu darbību (pieraksts, katalogs vai Direct) un atgādinājums par to katrā trešajā publikācijā.",
+ g_reach_t:"Reels aiziet ārpus sekotājiem",g_reach_w:"Tavi video sasniedz {p}% no sekotāju skaita. Tas ir galvenais izaugsmes dzinējs, to vajag vairāk.",
+ g_eng_t:"Auditorija ir dzīva",g_eng_w:"Iesaiste {p}% ir virs vidējā. Cilvēki ir gatavi runāt, tāpēc vari jautāt un piedāvāt drosmīgāk.",
+ g_reg_t:"Ritms ir stabils",g_reg_w:"Regularitāte ir tavs pamats. Tagad svarīgāk ir uzlabot katras publikācijas sākumu.",
+ g_bio_t:"Profils ir saprotams",g_bio_w:"Bio atbild uz galvenajiem jautājumiem. Pārbaudi tikai, vai saite ved uz vienu konkrētu darbību.",
+ ex_k:"02 — Piemēri",ex_h:"Šādi izskatās pilnais audits",
+ ex_p:"Trīs piemēri ar izdomātiem kontiem. Uzspied uz publikācijām un pārslēdz bio “pirms” un “pēc”.",
+ ex_tag:"Piemērs · izdomāts konts",ex_f:"sekotāji",ex_p2:"publikācijas",ex_v:"vid. skatījumi",
+ ex_grid_h:"Pēdējās 9 publikācijas",ex_note0:"Uzspied uz publikācijas, lai redzētu komentāru.",ex_noteless:"Vidējs rezultāts, nekā īpaša.",
+ heat:["Virs vidējā","Vidēji","Zem vidējā"],ex_views:"skatījumi",types:{reel:"Reels",photo:"Foto",car:"Karuselis"},
+ ex_bio_h:"Bio",before:"Pirms",after:"Pēc",ex_plan_h:"30 dienu plāns",week:"Nedēļa",ex_find_h:"Galvenie secinājumi",ex_cats:"Vērtējums pa jomām",
+ how_k:"03 — Pilnais audits",how_h:"Ko tu saņem",how_p:"Ekspress-audits parāda virzienu. Pilnajā auditā cilvēks izskata tavu kontu ar rokām un dod gatavus tekstus un plānu.",
+ deliv:[["Pirmais iespaids","Bio, profila foto, Highlights un piespraustās publikācijas: ko cilvēks redz pirmajās 3 sekundēs."],["Satura analīze","Kuras publikācijas strādā, kuras ne, un kāpēc tieši tā."],["Hook pārbaude","Pirmās 2 sekundes tavos pēdējos 10 Reels un vieta, kur skatītāji aiziet."],["3 konkurenti","Ko viņi dara labāk un kur tev ir brīva vieta nišā."],["Gatavi teksti","Pārrakstīts bio un 3 Reels scenāriji tavai nišai."],["30 dienu plāns","Konkrēti soļi pa nedēļām, nevis vispārīgi padomi."]],
+ how_fmt:"20 min video pārskats + PDF · 48 stundu laikā",
+ pr_k:"04 — Cena",pr_h:"Pasūti savu auditu",pr_note:"Ieviešanas cena pirmajiem 5 klientiem. Pēc tam 69 €.",
+ f_ig:"Instagram saite",f_contact:"Kā ar tevi sazināties",f_contact_ph:"e-pasts vai telefons",f_goal:"Galvenais mērķis",f_msg:"Ko vēl vajadzētu zināt",f_msg_ph:"Piemēram: sekotāji aug, bet pierakstu nav",f_btn:"Sagatavot pieteikumu",
+ f_err:"Aizpildi Instagram saiti un kontaktu",
+ done_h:"Pieteikums gatavs",done_p:"Nokopē ziņu un nosūti to Instagram Direct uz @{h}.",copy:"Kopēt ziņu",copied:"Nokopēts ✓",copy_fail:"Iezīmē tekstu un nokopē ar rokām",open:"Atvērt Direct",edit:"Labot",
+ msg:"Labdien! Vēlos pilno Instagram auditu.\nKonts: {ig}\nMērķis: {goal}\nKontakts: {c}",msg_extra:"Komentārs: {m}",msg_score:"Ekspress-vērtējums: {s}/100",
+ foot1:"© 2026 Profila Audits · Rīga",foot2:"Instagram ir Meta zīmols. Šis serviss nav saistīts ar Meta."
+},
+ru:{
+ brand:"Аудит профиля",nav_ex:"Примеры",nav_how:"Что внутри",nav_price:"Цена",nav_cta:"Заказать аудит",
+ mq_word:"АУДИТ",mq_default:"@ТВОЙ.АККАУНТ",
+ hero_eyebrow:"Аудит Instagram-аккаунта · Рига",
+ hero_h:"Узнай, что <em>тормозит</em> твой Instagram",
+ hero_p:"Введи ссылку на профиль, ответь на 7 быстрых вопросов и получи экспресс-аудит: оценку, слабые места и шаги на эту неделю. Бесплатно, 2 минуты.",
+ hero_ph:"instagram.com/tvoj.akkaunt",hero_btn:"Начать аудит",
+ hero_err:"Введи ссылку на Instagram или имя пользователя, например @tvoj.akkaunt",
+ hero_note:"Пароль не нужен. Только ссылка.",corner:"РИГА, ЛАТВИЯ",
+ badge_txt:"БЕСПЛАТНЫЙ ЭКСПРЕСС-АУДИТ • 2 МИНУТЫ • ",badge_c:"МИН",
+ st1:"Био без призыва к действию",st2:"Reels охватывают в 3× больше",st3:"Публикации нерегулярные",
+ tick:["Био и первое впечатление","Охват","Вовлечённость","Регулярность","Reels и форматы","Путь до покупки"],
+ tool_k:"01 — Экспресс-аудит",tool_h:"Твой аккаунт в цифрах",
+ tool_p:"Цифры есть в статистике Instagram: Professional dashboard → Insights. Если не знаешь точно, пиши примерно.",
+ side_h:"Что ты получишь",side:["Оценку от 0 до 100","6 направлений с отдельной оценкой","Что тормозит сильнее всего","Шаги, которые сделать на этой неделе"],
+ q_handle_ph:"@tvoj.akkaunt",q_start:"С какого аккаунта начнём?",q_start_h:"Введи ссылку на Instagram или имя пользователя.",
+ q1:"Сколько у тебя подписчиков?",q2:"Сколько просмотров в среднем набирает один Reels?",q2h:"Посмотри последние 6–9 Reels и оцени среднее. Если Reels не делаешь, укажи охват фото.",
+ q3:"Сколько лайков в среднем получает одна публикация?",q3h:"В среднем по последним 9 публикациям.",
+ q4:"Как часто ты публикуешь?",q4o:["0–1 раз в неделю","2–3 раза в неделю","4–6 раз в неделю","Каждый день"],
+ q5:"Что уже есть в твоём профиле?",q5h:"Отметь всё, что есть. Если ничего из этого нет, нажми «Дальше».",
+ q5o:["Понятно, кто ты","Что ты предлагаешь","Призыв к действию","Ссылка (запись, магазин)","Оформленные Highlights"],
+ q5short:["кто ты","что ты предлагаешь","призыв к действию","ссылка","оформленные Highlights"],
+ q6:"Какой контент у тебя преобладает?",q6o:["В основном фото","В основном Reels","Карусели","Всего понемногу"],
+ q7:"Какая у тебя главная цель?",q7o:["Продажи","Записи и клиенты","Узнаваемость","Личный блог"],
+ back:"← Назад",next:"Дальше →",show:"Показать результат",of:"из",
+ need:"Введи число, чтобы продолжить",pick:"Выбери один вариант",
+ scan_h:"Анализируем…",scan:["Сравниваем просмотры с числом подписчиков","Считаем вовлечённость","Проверяем первое впечатление от профиля","Составляем шаги на эту неделю"],
+ res_k:"Экспресс-оценка",lvl:["Аккаунт буксует","Потенциал есть, но много утечек","Хорошая база","Сильный аккаунт"],
+ cats:["Охват","Вовлечённость","Регулярность","Профиль и био","Форматы","Путь до покупки"],
+ m_reach:"Охват Reels",m_reach_n:"от подписчиков · хорошо: 50%+",m_eng:"Вовлечённость",m_eng_n:"· хорошо: 3%+",
+ f_h:"Что тормозит сильнее всего",w_h:"Что уже работает",do:"Что делать",
+ sev:{crit:"Критично",warn:"Важно",good:"Работает"},
+ disc:"Экспресс-аудит основан только на твоих ответах. В полном аудите человек смотрит твой профиль, публикации и конкурентов и находит то, чего не видно в цифрах.",
+ res_cta:"Хочу полный аудит",restart:"Начать заново",
+ r_reach_t:"Reels видят только {p}% подписчиков",r_reach_w:"Алгоритм не показывает твои видео даже каждому второму подписчику. Чаще всего проблема в первых 2 секундах.",r_reach_d:"В следующих 3 Reels: текст на экране уже в первом кадре и движение до 1-й секунды. Сравни, какое начало удерживает зрителя.",
+ r_eng_t:"Смотрят, но не реагируют",r_eng_w:"Вовлечённость {p}%. Без лайков и комментариев алгоритм не понимает, кому ещё показывать твой контент.",r_eng_d:"Заканчивай каждую публикацию вопросом, на который можно ответить одним словом или эмодзи.",
+ r_reg_t:"Между публикациями алгоритм о тебе забывает",r_reg_w:"Редкие публикации означают, что каждое видео стартует с нуля.",r_reg_d:"Выбери ритм, который выдержишь месяц: 3 публикации в неделю в фиксированные дни. Снимай несколько видео за один день.",
+ r_bio_t:"В профиле не хватает: {list}",r_bio_w:"Новый человек проводит в профиле около 3 секунд. Если он не понял, кто ты и что делать дальше, он уходит.",r_bio_d:"Перепиши био по формуле: кому помогаешь → с чем → что сделать сейчас (ссылка или Direct).",
+ r_fmt_t:"Одни фото не приводят новых людей",r_fmt_w:"Фото видят в основном текущие подписчики. Новая аудитория приходит через Reels и карусели.",r_fmt_d:"Преврати 3 лучших фото в карусель или Reels с голосовым комментарием.",
+ r_sales_t:"Нет понятного пути до покупки",r_sales_w:"Даже если контент нравится, человеку приходится искать, как купить или записаться. Большинство этого не делает.",r_sales_d:"Одна ссылка с одним действием (запись, каталог или Direct) и напоминание о ней в каждой третьей публикации.",
+ g_reach_t:"Reels выходят за пределы подписчиков",g_reach_w:"Твои видео набирают {p}% от числа подписчиков. Это главный двигатель роста, их нужно больше.",
+ g_eng_t:"Аудитория живая",g_eng_w:"Вовлечённость {p}% выше средней. Люди готовы общаться, поэтому можно смелее спрашивать и предлагать.",
+ g_reg_t:"Ритм стабильный",g_reg_w:"Регулярность — твоя база. Теперь важнее улучшить начало каждой публикации.",
+ g_bio_t:"Профиль понятен",g_bio_w:"Био отвечает на главные вопросы. Проверь только, ведёт ли ссылка к одному конкретному действию.",
+ ex_k:"02 — Примеры",ex_h:"Так выглядит полный аудит",
+ ex_p:"Три примера с вымышленными аккаунтами. Нажимай на публикации и переключай био «до» и «после».",
+ ex_tag:"Пример · вымышленный аккаунт",ex_f:"подписчики",ex_p2:"публикации",ex_v:"ср. просмотры",
+ ex_grid_h:"Последние 9 публикаций",ex_note0:"Нажми на публикацию, чтобы увидеть комментарий.",ex_noteless:"Средний результат, ничего особенного.",
+ heat:["Выше среднего","Средне","Ниже среднего"],ex_views:"просмотры",types:{reel:"Reels",photo:"Фото",car:"Карусель"},
+ ex_bio_h:"Био",before:"До",after:"После",ex_plan_h:"План на 30 дней",week:"Неделя",ex_find_h:"Главные выводы",ex_cats:"Оценка по направлениям",
+ how_k:"03 — Полный аудит",how_h:"Что ты получаешь",how_p:"Экспресс-аудит показывает направление. В полном аудите человек вручную разбирает твой аккаунт и даёт готовые тексты и план.",
+ deliv:[["Первое впечатление","Био, фото профиля, Highlights и закреплённые публикации: что человек видит за первые 3 секунды."],["Разбор контента","Какие публикации работают, какие нет, и почему именно так."],["Проверка хуков","Первые 2 секунды твоих последних 10 Reels и момент, где зрители уходят."],["3 конкурента","Что они делают лучше и где у тебя свободное место в нише."],["Готовые тексты","Переписанное био и 3 сценария Reels для твоей ниши."],["План на 30 дней","Конкретные шаги по неделям, а не общие советы."]],
+ how_fmt:"20 мин видеоразбор + PDF · в течение 48 часов",
+ pr_k:"04 — Цена",pr_h:"Закажи свой аудит",pr_note:"Стартовая цена для первых 5 клиентов. Потом 69 €.",
+ f_ig:"Ссылка на Instagram",f_contact:"Как с тобой связаться",f_contact_ph:"e-mail или телефон",f_goal:"Главная цель",f_msg:"Что ещё стоит знать",f_msg_ph:"Например: подписчики растут, а записей нет",f_btn:"Подготовить заявку",
+ f_err:"Заполни ссылку на Instagram и контакт",
+ done_h:"Заявка готова",done_p:"Скопируй сообщение и отправь его в Instagram Direct на @{h}.",copy:"Скопировать",copied:"Скопировано ✓",copy_fail:"Выдели текст и скопируй вручную",open:"Открыть Direct",edit:"Исправить",
+ msg:"Здравствуйте! Хочу полный аудит Instagram.\nАккаунт: {ig}\nЦель: {goal}\nКонтакт: {c}",msg_extra:"Комментарий: {m}",msg_score:"Экспресс-оценка: {s}/100",
+ foot1:"© 2026 Аудит профиля · Рига",foot2:"Instagram — бренд Meta. Сервис не связан с Meta."
+}};
+
+/* ===== Example audits (fictional accounts) ===== */
+const L=(lv,ru)=>({lv,ru});
+const EX=[
+{handle:"kalnu.kafija",init:"K",niche:L("Kafejnīca · Rīga","Кофейня · Рига"),followers:2340,posts:412,views:610,score:54,
+ cats:[47,59,60,40,55,45],pal:["#8a5a3b","#c9a27e","#5e3b25","#d8b48f","#a3714d"],
+ tiles:[{t:"reel",v:4800,n:L("Rudens latte ar cenu ekrānā. Labākais rezultāts: sezonāls produkts plus konkrēta cena.","Осенний латте с ценой на экране. Лучший результат: сезонный продукт плюс конкретная цена.")},
+  {t:"photo",v:310,n:L("Krūze no augšas, jau 14. reizi. Cilvēki to ritina garām.","Чашка сверху, уже в 14-й раз. Её пролистывают.")},
+  {t:"photo",v:280},{t:"car",v:900,n:L("Ēdienkarte karuselī. Daudz saglabāšanu, to vajag piespraust profilā.","Меню в карусели. Много сохранений, его стоит закрепить в профиле.")},
+  {t:"photo",v:350},{t:"reel",v:620,n:L("Pirmajā kadrā nav teksta, 70% aiziet pirmajās 2 sekundēs.","В первом кадре нет текста, 70% уходят в первые 2 секунды.")},
+  {t:"photo",v:240},{t:"photo",v:300},{t:"reel",v:1700,n:L("Barista stāsta par pupiņām. Labi komentāri, no tā var taisīt sēriju.","Бариста рассказывает о зёрнах. Хорошие комментарии, из этого можно сделать серию.")}],
+ finds:[{s:"crit",t:L("Bio saka “Kafija ar mīlestību” un neko vairāk","Био говорит «Кофе с любовью» и больше ничего"),w:L("Cilvēks 3 sekundēs neuzzina adresi, darba laiku un iemeslu nākt tieši šeit.","За 3 секунды человек не узнаёт адрес, часы работы и причину прийти именно сюда."),d:L("Bio ar rajonu, darba laiku un vienu darbību: galdiņa rezervācija.","Био с районом, часами работы и одним действием: бронь столика.")},
+  {s:"crit",t:L("80% publikāciju ir kafijas tases foto no augšas","80% публикаций — фото чашки кофе сверху"),w:L("Katrs atsevišķi ir skaists, bet kopā tie ir vienādi, un cilvēki tos izlaiž.","По отдельности красиво, но вместе всё одинаково, и люди это пролистывают."),d:L("Reels sērija: kā top kruasāns, baristas izvēle nedēļā, rīta rinda pirms 8:00.","Серия Reels: как пекут круассан, выбор бариста недели, утренняя очередь до 8:00.")},
+  {s:"warn",t:L("11 Highlights bez nosaukumiem","11 Highlights без названий"),w:L("Neviens neatvērs aplīšus, ja nav skaidrs, kas tajos ir.","Никто не открывает кружки, если непонятно, что внутри."),d:L("Atstāj 4: Ēdienkarte, Kur mēs esam, Pasākumi, Atsauksmes.","Оставь 4: Меню, Где мы, События, Отзывы.")},
+  {s:"good",t:L("Sezonālie Reels ar cenu strādā","Сезонные Reels с ценой работают"),w:L("Rudens latte savāca 8× vairāk skatījumu nekā vidēji.","Осенний латте набрал в 8× больше просмотров, чем в среднем."),d:L("Atkārto formātu ar ziemas dzērieniem decembrī.","Повтори формат с зимними напитками в декабре.")}],
+ bioB:L("☕ Kafija ar mīlestību ✨\n📍 Rīga","☕ Kafija ar mīlestību ✨\n📍 Rīga"),
+ bioA:L("Specialty kafija un mājas kruasāni Āgenskalnā\nDarba dienās 8:00–19:00 · brīvdienās no 10:00\n⬇ Rezervē galdiņu vai pasūti līdzņemšanai","Specialty kafija un mājas kruasāni Āgenskalnā\nDarba dienās 8:00–19:00 · brīvdienās no 10:00\n⬇ Rezervē galdiņu vai pasūti līdzņemšanai\n\n(перевод: спешелти-кофе и домашние круассаны в Агенскалнсе · часы работы · ⬇ бронь столика или навынос)"),
+ plan:[L("Bio, Highlights un piesprausta ēdienkarte","Био, Highlights и закреплённое меню"),L("3 Reels “aiz letes”: kā top kruasāns, barista, rīts","3 Reels «за стойкой»: круассан, бариста, утро"),L("Ziemas dzērieni ar cenu ekrānā + Stories aptauja","Зимние напитки с ценой на экране + опрос в Stories"),L("Analīze: atkārtot 2 labākos formātus","Анализ: повторить 2 лучших формата")]},
+{handle:"ziedi.nagu.studija",init:"Z",niche:L("Nagu meistare · Jelgava","Мастер маникюра · Елгава"),followers:860,posts:138,views:1900,score:71,
+ cats:[95,92,55,50,80,35],pal:["#c97c86","#e8b9b3","#9b4f5c","#f0d2c8","#b8606d"],
+ tiles:[{t:"reel",v:3100,n:L("“Pirms/pēc” ar ASMR skaņu. Tavs dzinējs: skatās līdz beigām.","«До/после» со звуком ASMR. Твой двигатель: досматривают до конца.")},
+  {t:"reel",v:5200,n:L("Rekords, bet komentāros 14× “cik maksā?” un neviena pieraksta, jo nav saites.","Рекорд, но в комментариях 14× «сколько стоит?» и ни одной записи, потому что нет ссылки.")},
+  {t:"photo",v:420},{t:"reel",v:2400},{t:"photo",v:380},
+  {t:"reel",v:900,n:L("Bez skaņas un teksta. Tas pats saturs, bet 3× mazāk skatījumu.","Без звука и текста. Тот же контент, но в 3× меньше просмотров.")},
+  {t:"car",v:1200,n:L("Cenrādis karuselī. Saglabā daudz, piesprauž: nē. Vajag piespraust.","Прайс в карусели. Много сохранений, но не закреплён. Нужно закрепить.")},
+  {t:"photo",v:350},{t:"reel",v:2700}],
+ finds:[{s:"crit",t:L("Reels redz 2× vairāk cilvēku nekā sekotāju, bet pierakstu nav","Reels видят в 2× больше людей, чем подписчиков, но записей нет"),w:L("Video aiziet jaunai auditorijai, bet profilā nav saites uz pierakstu, tāpēc cilvēki aiziet.","Видео уходят новой аудитории, но в профиле нет ссылки на запись, и люди уходят."),d:L("Saite uz pierakstu bio un Stories “Brīvie laiki šonedēļ” katru pirmdienu.","Ссылка на запись в био и Stories «Свободные окна на неделе» каждый понедельник.")},
+  {s:"warn",t:L("Cenas nav atrodamas","Цен не найти"),w:L("Puse komentāru ir “cik maksā?”. Katrs tāds jautājums ir cilvēks, kurš varēja pierakstīties uzreiz.","Половина комментариев — «сколько стоит?». Каждый такой вопрос — человек, который мог записаться сразу."),d:L("Highlight “Cenas” un piesprausts karuselis ar cenrādi.","Highlight «Цены» и закреплённая карусель с прайсом.")},
+  {s:"warn",t:L("Publicē viļņveidīgi","Публикации волнами"),w:L("6 Reels vienā nedēļā, tad 3 nedēļas klusums. Algoritms katru reizi sāk no jauna.","6 Reels за неделю, потом 3 недели тишины. Алгоритм каждый раз начинает заново."),d:L("Filmē 4 video vienā dienā, publicē 2 nedēļā.","Снимай 4 видео за один день, публикуй по 2 в неделю.")},
+  {s:"good",t:L("Iesaiste 7,4%","Вовлечённость 7,4%"),w:L("Tas ir 2–3× virs vidējā. Auditorija tev uzticas.","Это в 2–3× выше среднего. Аудитория тебе доверяет."),d:L("Jautā Stories, kādu dizainu taisīt nākamo.","Спрашивай в Stories, какой дизайн делать следующим.")}],
+ bioB:L("Nagi 💅 Jelgava\nRaksti Direct","Nagi 💅 Jelgava\nRaksti Direct"),
+ bioA:L("Manikīrs un gēla nagi Jelgavas centrā\nPirmā vizīte −10%\n⬇ Brīvie laiki un pieraksts","Manikīrs un gēla nagi Jelgavas centrā\nPirmā vizīte −10%\n⬇ Brīvie laiki un pieraksts\n\n(перевод: маникюр и гель в центре Елгавы · первый визит −10% · ⬇ свободные окна и запись)"),
+ plan:[L("Saite uz pierakstu + Highlight “Cenas”","Ссылка на запись + Highlight «Цены»"),L("Filmēšanas diena: 4 “pirms/pēc” video","Съёмочный день: 4 видео «до/после»"),L("Stories ritms: brīvie laiki katru pirmdienu","Ритм Stories: свободные окна каждый понедельник"),L("Atsauksmju Highlight + 2 klientu stāsti","Highlight с отзывами + 2 истории клиентов")]},
+{handle:"kustibas.treneris",init:"K",niche:L("Personīgais treneris · Rīga","Персональный тренер · Рига"),followers:5100,posts:640,views:380,score:38,
+ cats:[18,33,40,70,30,55],pal:["#3e5a62","#7c9a8f","#26393f","#a9bdb1","#56767a"],
+ tiles:[{t:"photo",v:220,n:L("Vingrinājums zālē bez paskaidrojuma. Skatītājs nesaprot, kāpēc tas viņam vajadzīgs.","Упражнение в зале без пояснения. Зритель не понимает, зачем ему это.")},
+  {t:"photo",v:180},{t:"reel",v:380},
+  {t:"reel",v:2100,n:L("“Sāp mugura pēc darba pie datora?” Vienīgais video ar problēmu jau sākumā, un 5,5× vairāk skatījumu.","«Болит спина после работы за компьютером?» Единственное видео с проблемой в начале и в 5,5× больше просмотров.")},
+  {t:"photo",v:240},{t:"photo",v:150,n:L("Teksts 2 000 rakstzīmju. Līdz beigām izlasa daži.","Текст на 2 000 символов. До конца дочитывают единицы.")},
+  {t:"car",v:450},{t:"photo",v:200},{t:"reel",v:310}],
+ finds:[{s:"crit",t:L("Reels redz tikai 7% sekotāju","Reels видят только 7% подписчиков"),w:L("Daudzi sekotāji nāk no 2021. gada konkursa un vairs nav aktīvi. Viņi nereaģē, un algoritms rāda saturu arvien mazāk.","Много подписчиков пришло с конкурса 2021 года и они больше не активны. Они не реагируют, и алгоритм показывает контент всё реже."),d:L("Taisi saturu jaunai auditorijai: Reels ar skaidru problēmu pirmajā sekundē.","Делай контент для новой аудитории: Reels с понятной проблемой в первую секунду.")},
+  {s:"crit",t:L("Treniņu foto bez paskaidrojuma","Фото тренировок без пояснения"),w:L("Skatītājs redz vingrinājumu, bet neredz savu problēmu.","Зритель видит упражнение, но не видит своей проблемы."),d:L("Katrs video: viena problēma, viens vingrinājums, rezultāts.","Каждое видео: одна проблема, одно упражнение, результат.")},
+  {s:"warn",t:L("Garie teksti","Длинные тексты"),w:L("2 000 rakstzīmju zem foto telefonā neviens nelasa.","2 000 символов под фото с телефона никто не читает."),d:L("Īss teksts plus karuselis ar 5 slaidiem.","Короткий текст плюс карусель на 5 слайдов.")},
+  {s:"good",t:L("Bio ir skaidrs un ar saiti","Био понятное и со ссылкой"),w:L("Pamats pārdošanai ir. Problēma ir tikai cilvēku plūsmā.","База для продаж есть. Проблема только в потоке людей."),d:L("Pievieno bezmaksas 15 min konsultāciju kā pirmo soli.","Добавь бесплатную 15-минутную консультацию как первый шаг.")}],
+ bioB:L("Personīgais treneris 🏋️ | Rīga\nSertificēts | 10+ gadi\nlinktr.ee/…","Personīgais treneris 🏋️ | Rīga\nSertificēts | 10+ gadi\nlinktr.ee/…"),
+ bioA:L("Palīdzu cilvēkiem ar sēdošu darbu atbrīvoties no muguras sāpēm\nTreniņi Rīgā un online · 10+ gadu pieredze\n⬇ Bezmaksas 15 min konsultācija","Palīdzu cilvēkiem ar sēdošu darbu atbrīvoties no muguras sāpēm\nTreniņi Rīgā un online · 10+ gadu pieredze\n⬇ Bezmaksas 15 min konsultācija\n\n(перевод: помогаю людям с сидячей работой избавиться от боли в спине · тренировки в Риге и онлайн · ⬇ бесплатная консультация 15 мин)"),
+ plan:[L("Jauns bio + 3 piespraustās publikācijas","Новое био + 3 закреплённые публикации"),L("Sērija “Birojs bez sāpēm”: 5 Reels","Серия «Офис без боли»: 5 Reels"),L("Karuseļi: 5 kļūdas, sākot trenēties","Карусели: 5 ошибок новичков"),L("Live ar jautājumiem + piedāvājums","Эфир с вопросами + предложение")]}
+];
+
+/* ===== helpers ===== */
+const $=s=>document.querySelector(s);
+let lang="lv";
+try{const s=localStorage.getItem("audits-lang");if(s==="lv"||s==="ru")lang=s;else if((navigator.language||"").toLowerCase().startsWith("ru"))lang="ru";}catch(e){}
+const t=k=>T[lang][k];
+const fmt=n=>new Intl.NumberFormat(lang==="lv"?"lv-LV":"ru-RU").format(n);
+const fmt1=n=>new Intl.NumberFormat(lang==="lv"?"lv-LV":"ru-RU",{maximumFractionDigits:1}).format(n);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const tpl=(s,o)=>s.replace(/\{(\w+)\}/g,(_,k)=>o[k]);
+const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function parseHandle(raw){
+  let s=(raw||"").trim();
+  if(!s)return null;
+  s=s.replace(/^https?:\/\//i,"").replace(/^www\./i,"");
+  s=s.replace(/^(instagram\.com|instagr\.am)\//i,"");
+  s=s.split(/[/?#]/)[0].replace(/^@/,"").toLowerCase();
+  return /^[a-z0-9._]{1,30}$/.test(s)&&!/^\.|\.$/.test(s)?s:null;
+}
+
+/* torn paper edges */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function torn(el,seed){
+  const r=rng(seed),p=[];
+  for(let x=0;x<=100;x+=3.2)p.push(`${x}% ${(r()*2.6).toFixed(2)}%`);
+  for(let y=0;y<=100;y+=3.2)p.push(`${(100-r()*3.4).toFixed(2)}% ${y}%`);
+  for(let x=100;x>=0;x-=3.2)p.push(`${x}% ${(100-r()*2.6).toFixed(2)}%`);
+  for(let y=100;y>=0;y-=3.2)p.push(`${(r()*3.4).toFixed(2)}% ${y}%`);
+  el.style.clipPath=`polygon(${p.join(",")})`;
+}
+torn($("#heroCard"),7);
+
+/* hero grid tiles */
+(function(){const c=["#c9a27e","#8a5a3b","#e3cdb1","#b07c5a","#5e3b25","#d8b48f","#9b6b4a","#ecd9c0","#7a4e33"];
+$("#heroGrid").innerHTML=c.map(x=>`<i style="background:linear-gradient(140deg,${x},${x}cc)"></i>`).join("");})();
+
+/* marquee */
+let typedHandle=null;
+function fillMarquee(){
+  const w=t("mq_word"),h=typedHandle?("@"+typedHandle).toUpperCase():t("mq_default");
+  $("#mq1").innerHTML=Array(8).fill(`<span>${esc(w)}</span>`).join("");
+  $("#mq2").innerHTML=Array(6).fill(`<span>${esc(h)}</span>`).join("");
+  $("#heroHandle").textContent="@"+(typedHandle||t("q_handle_ph").replace("@",""));
+  $("#heroInit").textContent=(typedHandle||"t")[0].toUpperCase();
+}
+function fillTicker(){const items=t("tick");$("#tick").innerHTML=[...items,...items,...items,...items].map(x=>`<span>${esc(x)}</span>`).join("");}
+
+/* parallax tilt on hero card */
+(function(){
+  const st=$("#stage"),card=$("#heroCard");if(reduced)return;
+  st.addEventListener("pointermove",e=>{const b=st.getBoundingClientRect();const x=(e.clientX-b.left)/b.width-.5,y=(e.clientY-b.top)/b.height-.5;
+    card.style.setProperty("--ry",(x*14).toFixed(2)+"deg");card.style.setProperty("--rx",(-y*10).toFixed(2)+"deg");card.style.setProperty("--rz",(-1.5+x*3).toFixed(2)+"deg");});
+  st.addEventListener("pointerleave",()=>{card.style.setProperty("--ry","0deg");card.style.setProperty("--rx","0deg");card.style.setProperty("--rz","-1.5deg");});
+})();
+
+/* ===== i18n apply ===== */
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll("[data-t]").forEach(el=>{const v=t(el.dataset.t);if(typeof v==="string")el.textContent=v;});
+  document.querySelectorAll("[data-th]").forEach(el=>{el.innerHTML=t(el.dataset.th);});
+  document.querySelectorAll("[data-tp]").forEach(el=>{el.placeholder=t(el.dataset.tp);});
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===lang));
+  $("#badgeTxt").textContent=t("badge_txt");
+  $("#sideList").innerHTML=t("side").map((s,i)=>`<li><span class="mono">0${i+1}</span><span>${esc(s)}</span></li>`).join("");
+  $("#deliv").innerHTML=t("deliv").map((d,i)=>`<div class="dv"><span class="n">0${i+1}</span><h3>${esc(d[0])}</h3><p>${esc(d[1])}</p></div>`).join("");
+  const g=$("#oGoal"),gv=g.value;g.innerHTML=t("q7o").map((o,i)=>`<option value="${i}">${esc(o)}</option>`).join("");if(gv)g.value=gv;
+  fillMarquee();fillTicker();renderPanel();renderTabs();renderReport();
+  if(orderDone)renderDone();
+}
+document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{lang=b.dataset.lang;try{localStorage.setItem("audits-lang",lang)}catch(e){}applyLang();}));
+
+/* ===== quiz state ===== */
+const A={handle:null,followers:"",views:"",likes:"",freq:null,bio:[],mix:null,goal:null};
+let step=0; // 0=handle,1..7 questions,8=scanning,9=result
+let lastResult=null;
+const STEPS=["handle","followers","views","likes","freq","bio","mix","goal"];
+
+function renderPanel(){
+  const p=$("#panel");
+  if(step===8){renderScan(p);return}
+  if(step===9){renderResult(p);return}
+  const total=7,cur=Math.max(step,1);
+  const key=STEPS[step];
+  let body="",title="",help="";
+  if(key==="handle"){title=t("q_start");help=t("q_start_h");body=`<input class="bignum" style="font-size:clamp(34px,4.6vw,56px)" id="qIn" type="text" autocomplete="off" spellcheck="false" placeholder="${esc(t("q_handle_ph"))}" value="${esc(A.handle?"@"+A.handle:"")}" aria-label="${esc(title)}">`}
+  if(key==="followers"){title=t("q1");body=numIn(A.followers,"1 250")}
+  if(key==="views"){title=t("q2");help=t("q2h");body=numIn(A.views,"800")}
+  if(key==="likes"){title=t("q3");help=t("q3h");body=numIn(A.likes,"45")}
+  if(key==="freq"){title=t("q4");body=chips(t("q4o"),[A.freq])}
+  if(key==="bio"){title=t("q5");help=t("q5h");body=chips(t("q5o"),A.bio,true)}
+  if(key==="mix"){title=t("q6");body=chips(t("q6o"),[A.mix])}
+  if(key==="goal"){title=t("q7");body=chips(t("q7o"),[A.goal])}
+  const last=key==="goal";
+  p.innerHTML=`
+   <div class="q-top"><span class="mono">${step===0?"00":String(cur).padStart(2,"0")} / 07</span>${A.handle?`<span class="handle-pill">@${esc(A.handle)}</span>`:""}</div>
+   <div class="prog"><i style="width:${(step/total)*100}%"></i></div>
+   <div class="q q-anim"><h3>${esc(title)}</h3><p class="qh">${esc(help)}</p>${body}</div>
+   <div class="q-nav">
+     ${step>0?`<button class="btn ghost" type="button" id="qBack">${esc(t("back"))}</button>`:"<span></span>"}
+     <span class="hint err" id="qErr"></span>
+     <button class="btn" type="button" id="qNext">${esc(last?t("show"):t("next"))}</button>
+   </div>`;
+  const inp=$("#qIn");
+  if(inp){inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();next()}});}
+  p.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+    const i=+c.dataset.i;
+    if(key==="bio"){A.bio=A.bio.includes(i)?A.bio.filter(x=>x!==i):[...A.bio,i];c.setAttribute("aria-pressed",A.bio.includes(i))}
+    else{A[key]=i;p.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===c));setTimeout(next,220)}
+  }));
+  $("#qNext").addEventListener("click",next);
+  const bk=$("#qBack");if(bk)bk.addEventListener("click",()=>{step--;renderPanel()});
+}
+function numIn(v,ph){return `<input class="bignum" id="qIn" type="text" inputmode="numeric" autocomplete="off" placeholder="${ph}" value="${esc(v)}">`}
+function chips(opts,sel,multi){return `<div class="chips" role="group">${opts.map((o,i)=>`<button type="button" class="chip" data-i="${i}" aria-pressed="${sel.includes(i)}">${esc(o)}</button>`).join("")}</div>`}
+function num(v){const n=parseInt(String(v).replace(/[\s.,]/g,""),10);return isNaN(n)?null:n}
+function next(){
+  const key=STEPS[step],err=$("#qErr"),inp=$("#qIn");
+  if(key==="handle"){const h=parseHandle(inp.value);if(!h){err.textContent=t("hero_err");inp.focus();return}A.handle=h;typedHandle=h;fillMarquee();}
+  else if(["followers","views","likes"].includes(key)){const n=num(inp.value);if(n===null||n<0){err.textContent=t("need");inp.focus();return}A[key]=n;}
+  else if(key!=="bio"&&A[key]===null){err.textContent=t("pick");return}
+  if(key==="goal"){step=8;renderPanel();return}
+  step++;renderPanel();
+  const ni=$("#qIn");if(ni)ni.focus({preventScroll:true});
+}
+
+/* ===== scoring ===== */
+function computeAudit(a){
+  const f=Math.max(1,a.followers);
+  const r=a.views/f, e=a.likes/f*100;
+  const reach=clamp(Math.round(100*Math.sqrt(Math.min(r,1.2)/1.2)),5,100);
+  const engage=clamp(Math.round(41*Math.sqrt(e)),5,100);
+  const regular=[25,60,92,85][a.freq];
+  const bio=clamp(a.bio.length*20,10,100);
+  const format=[35,80,62,88][a.mix];
+  const sales=clamp(25+(a.bio.includes(1)?15:0)+(a.bio.includes(2)?25:0)+(a.bio.includes(3)?35:0),0,100);
+  const sc=[reach,engage,regular,bio,format,sales];
+  const w=a.goal===3?[.28,.25,.17,.15,.10,.05]:[.25,.2,.15,.15,.1,.15];
+  const total=Math.round(sc.reduce((s,v,i)=>s+v*w[i],0));
+  const issues=[],goods=[];
+  const pr=Math.round(r*100), pe=fmt1(e);
+  if(reach<50)issues.push({s:reach<35?"crit":"warn",v:reach,t:tpl(t("r_reach_t"),{p:pr}),w:t("r_reach_w"),d:t("r_reach_d")});
+  else if(reach>=70)goods.push({v:reach,t:t("g_reach_t"),w:tpl(t("g_reach_w"),{p:pr})});
+  if(engage<50)issues.push({s:engage<35?"crit":"warn",v:engage,t:t("r_eng_t"),w:tpl(t("r_eng_w"),{p:pe}),d:t("r_eng_d")});
+  else if(engage>=70)goods.push({v:engage,t:t("g_eng_t"),w:tpl(t("g_eng_w"),{p:pe})});
+  if(regular<70)issues.push({s:regular<40?"crit":"warn",v:regular,t:t("r_reg_t"),w:t("r_reg_w"),d:t("r_reg_d")});
+  else goods.push({v:regular,t:t("g_reg_t"),w:t("g_reg_w")});
+  const miss=[0,1,2,3,4].filter(i=>!a.bio.includes(i)).map(i=>t("q5short")[i]);
+  if(bio<70)issues.push({s:bio<45?"crit":"warn",v:bio,t:tpl(t("r_bio_t"),{list:miss.join(", ")}),w:t("r_bio_w"),d:t("r_bio_d")});
+  else if(bio>=80)goods.push({v:bio,t:t("g_bio_t"),w:t("g_bio_w")});
+  if(a.mix===0)issues.push({s:"warn",v:format,t:t("r_fmt_t"),w:t("r_fmt_w"),d:t("r_fmt_d")});
+  if(a.goal!==3&&sales<60)issues.push({s:sales<45?"crit":"warn",v:sales,t:t("r_sales_t"),w:t("r_sales_w"),d:t("r_sales_d")});
+  issues.sort((x,y)=>x.v-y.v);goods.sort((x,y)=>y.v-x.v);
+  return {total,sc,r,e,issues:issues.slice(0,4),goods:goods.slice(0,2)};
+}
+
+function renderScan(p){
+  const lines=t("scan");
+  p.innerHTML=`<div class="q-top"><span class="mono">07 / 07</span><span class="handle-pill">@${esc(A.handle)}</span></div><div class="prog"><i style="width:100%"></i></div>
+   <div class="scanning"><h3>${esc(t("scan_h"))}</h3>${lines.map((l,i)=>`<div class="sline" id="sl${i}"><i></i><span>${esc(l)}</span></div>`).join("")}</div>`;
+  const d=reduced?0:520;
+  lines.forEach((_,i)=>{setTimeout(()=>{const el=$("#sl"+i);if(!el)return;el.classList.add("on");if(i>0){$("#sl"+(i-1)).classList.replace("on","done")}},i*d);});
+  setTimeout(()=>{lastResult=computeAudit(A);step=9;renderPanel();},lines.length*d+200);
+}
+
+function ringSVG(score,size=150){
+  const r=size/2-10,c=2*Math.PI*r,col=score<40?"var(--accent)":score<60?"var(--warn)":"var(--good)";
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="10"/><circle class="arc" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-c="${c}" data-s="${score}" style="transition:stroke-dashoffset 1.2s cubic-bezier(.3,.7,.2,1)"/></svg>`;
+}
+function animateRing(root){
+  root.querySelectorAll(".arc").forEach(a=>{const c=+a.dataset.c,s=+a.dataset.s;requestAnimationFrame(()=>requestAnimationFrame(()=>{a.style.strokeDashoffset=c*(1-s/100)}))});
+  root.querySelectorAll("[data-count]").forEach(n=>{const to=+n.dataset.count;if(reduced){n.textContent=to;return}const t0=performance.now();const tick=now=>{const k=Math.min(1,(now-t0)/1200);n.textContent=Math.round(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(tick)};requestAnimationFrame(tick)});
+  root.querySelectorAll(".cbar i").forEach(b=>requestAnimationFrame(()=>requestAnimationFrame(()=>{b.style.width=b.dataset.w+"%"})));
+}
+const band=v=>v<45?"lo":v<70?"mid":"hi";
+function catsHTML(sc){return `<div class="cats">${t("cats").map((c,i)=>`<div class="cat"><div class="cat-top"><span>${esc(c)}</span><b>${sc[i]}</b></div><div class="cbar"><i class="${band(sc[i])}" data-w="${sc[i]}"></i></div></div>`).join("")}</div>`}
+function findHTML(f){return `<div class="find ${f.s==="crit"?"":f.s}"><span class="sev ${f.s==="crit"?"":f.s}">${esc(t("sev")[f.s])}</span><h4>${esc(f.t)}</h4><p>${esc(f.w)}</p>${f.d?`<div class="do"><b>${esc(t("do"))}</b>${esc(f.d)}</div>`:""}</div>`}
+
+function renderResult(p){
+  // recompute so the language switch re-renders texts
+  lastResult=computeAudit(A);const R=lastResult;
+  const lv=R.total<40?0:R.total<60?1:R.total<80?2:3;
+  p.innerHTML=`<div class="q-anim">
+   <div class="q-top"><span class="mono">${esc(t("res_k"))}</span><span class="handle-pill">@${esc(A.handle)}</span></div>
+   <div class="res-head">
+     <div class="ring">${ringSVG(R.total)}<div class="num"><div><span data-count="${R.total}">0</span><small>/ 100</small></div></div></div>
+     <div><h3>${esc(t("lvl")[lv])}</h3>
+       <div class="metrics">
+         <span class="metric">${esc(t("m_reach"))}: <b>${fmt(Math.round(R.r*100))}%</b> ${esc(t("m_reach_n"))}</span>
+         <span class="metric">${esc(t("m_eng"))}: <b>${fmt1(R.e)}%</b> ${esc(t("m_eng_n"))}</span>
+       </div></div>
+   </div>
+   ${catsHTML(R.sc)}
+   ${R.issues.length?`<div class="sub-h">${esc(t("f_h"))}</div><div class="finds">${R.issues.map(findHTML).join("")}</div>`:""}
+   ${R.goods.length?`<div class="sub-h">${esc(t("w_h"))}</div><div class="finds">${R.goods.map(g=>findHTML({s:"good",t:g.t,w:g.w})).join("")}</div>`:""}
+   <p class="disc">${esc(t("disc"))}</p>
+   <div class="res-actions"><a href="#pasutit" class="btn" id="toOrder"><span>${esc(t("res_cta"))}</span> <span class="arr">→</span></a><button class="btn ghost" type="button" id="restart">${esc(t("restart"))}</button></div>
+  </div>`;
+  animateRing(p);
+  $("#toOrder").addEventListener("click",()=>{$("#oIg").value="instagram.com/"+A.handle;if(A.goal!==null)$("#oGoal").value=A.goal;});
+  $("#restart").addEventListener("click",()=>{Object.assign(A,{followers:"",views:"",likes:"",freq:null,bio:[],mix:null,goal:null});step=1;renderPanel();});
+}
+
+/* hero form → tool */
+$("#heroInput").addEventListener("input",e=>{const h=parseHandle(e.target.value);typedHandle=h;fillMarquee();});
+$("#heroForm").addEventListener("submit",e=>{
+  e.preventDefault();const h=parseHandle($("#heroInput").value),hint=$("#heroHint");
+  if(!h){hint.textContent=t("hero_err");hint.classList.add("err");$("#heroInput").focus();return}
+  hint.classList.remove("err");hint.textContent=t("hero_note");
+  A.handle=h;typedHandle=h;fillMarquee();
+  if(step<=1){step=1}renderPanel();
+  $("#audits").scrollIntoView({behavior:reduced?"auto":"smooth"});
+  setTimeout(()=>{const i=$("#qIn");if(i)i.focus({preventScroll:true})},reduced?0:600);
+});
+
+/* ===== examples ===== */
+let exIdx=0,exBio="before",exPost=-1;
+function renderTabs(){
+  $("#tabs").innerHTML=EX.map((x,i)=>`<button class="tab" role="tab" type="button" aria-selected="${i===exIdx}" data-i="${i}"><span><span class="t-h">@${x.handle}</span><br><span class="t-n">${esc(x.niche[lang])}</span></span><span class="t-s">${x.score}</span></button>`).join("");
+  $("#tabs").querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{exIdx=+b.dataset.i;exBio="before";exPost=-1;renderTabs();renderReport()}));
+}
+function renderReport(instant){
+  const x=EX[exIdx],max=Math.max(...x.tiles.map(p=>p.v)),avg=x.tiles.reduce((s,p)=>s+p.v,0)/x.tiles.length;
+  const heatOf=v=>v>avg*1.3?0:v<avg*.7?2:1, heatCol=["var(--good)","var(--warn)","var(--accent)"];
+  const tiles=x.tiles.map((p,i)=>{const c=x.pal[i%x.pal.length],c2=x.pal[(i+2)%x.pal.length];
+    return `<button type="button" class="post ${p.n?"has-note":""}" data-i="${i}" aria-pressed="${i===exPost}" style="background:linear-gradient(${120+i*25}deg,${c},${c2})" aria-label="${esc(t("types")[p.t])}, ${fmt(p.v)} ${esc(t("ex_views"))}">
+      <span class="pt">${esc(t("types")[p.t])}</span><span class="heat" style="background:${heatCol[heatOf(p.v)]}"></span>
+      <span class="pv">${fmt(p.v)}<small>${esc(t("ex_views"))}</small></span></button>`}).join("");
+  const sel=exPost>=0?x.tiles[exPost]:null;
+  const noteTxt=sel?(sel.n?sel.n[lang]:t("ex_noteless")):t("ex_note0");
+  $("#report").innerHTML=`<article class="report">
+    <div class="rep-top">
+      <div class="ava"><i>${x.init}</i></div>
+      <div class="rep-id"><span class="tag mono">${esc(t("ex_tag"))}</span><h3>@${x.handle}</h3>
+        <div class="rep-stats"><span><b>${fmt(x.followers)}</b>${esc(t("ex_f"))}</span><span><b>${fmt(x.posts)}</b>${esc(t("ex_p2"))}</span><span><b>${fmt(x.views)}</b>${esc(t("ex_v"))}</span><span><b>${esc(x.niche[lang].split(" · ")[1])}</b>${esc(x.niche[lang].split(" · ")[0])}</span></div></div>
+      <div class="ring" style="width:130px;height:130px">${ringSVG(x.score,130)}<div class="num" style="font-size:46px"><div><span data-count="${x.score}">0</span><small>/ 100</small></div></div></div>
+    </div>
+    <div class="rep-grid">
+      <div>
+        <div class="sub-h" style="margin-top:0">${esc(t("ex_grid_h"))}</div>
+        <div class="posts">${tiles}</div>
+        <div class="legend">${t("heat").map((h,i)=>`<span><i style="background:${heatCol[i]}"></i>${esc(h)}</span>`).join("")}</div>
+        <div class="note" id="exNote">${sel?`<span class="mono">${esc(t("types")[sel.t])} · ${fmt(sel.v)} ${esc(t("ex_views"))}</span>`:""}${esc(noteTxt)}</div>
+        <div class="sub-h">${esc(t("ex_bio_h"))} <span class="bio-sw" role="group"><button type="button" data-b="before" aria-pressed="${exBio==="before"}">${esc(t("before"))}</button><button type="button" data-b="after" aria-pressed="${exBio==="after"}">${esc(t("after"))}</button></span></div>
+        <div class="bio-box ${exBio}"><span class="who">@${x.handle}</span>${esc((exBio==="before"?x.bioB:x.bioA)[lang])}</div>
+      </div>
+      <div>
+        <div class="sub-h" style="margin-top:0">${esc(t("ex_cats"))}</div>
+        ${catsHTML(x.cats)}
+        <div class="sub-h">${esc(t("ex_find_h"))}</div>
+        <div class="finds">${x.finds.map(f=>findHTML({s:f.s,t:f.t[lang],w:f.w[lang],d:f.d[lang]})).join("")}</div>
+      </div>
+      <div class="rep-full">
+        <div class="sub-h">${esc(t("ex_plan_h"))}</div>
+        <div class="plan">${x.plan.map((w,i)=>`<div class="wk"><span class="mono">${esc(t("week"))} ${i+1}</span>${esc(w[lang])}</div>`).join("")}</div>
+      </div>
+    </div>
+  </article>`;
+  const rep=$("#report");if(!instant)animateRing(rep);
+  rep.querySelectorAll(".post").forEach(b=>b.addEventListener("click",()=>{exPost=+b.dataset.i;renderReportKeep()}));
+  rep.querySelectorAll(".bio-sw button").forEach(b=>b.addEventListener("click",()=>{exBio=b.dataset.b;renderReportKeep()}));
+}
+function renderReportKeep(){
+  // re-render without replaying the entrance animation
+  const y=window.scrollY;renderReport(true);$("#report .report").style.animation="none";
+  $("#report").querySelectorAll(".arc").forEach(a=>{a.style.transition="none";a.style.strokeDashoffset=a.dataset.c*(1-a.dataset.s/100)});
+  $("#report").querySelectorAll(".cbar i").forEach(b=>{b.style.transition="none";b.style.width=b.dataset.w+"%"});
+  $("#report").querySelectorAll("[data-count]").forEach(n=>{n.textContent=n.dataset.count;n.removeAttribute("data-count")});
+  window.scrollTo(0,y);
+}
+
+/* ===== order ===== */
+let orderDone=null;
+$("#orderForm").addEventListener("submit",e=>{
+  e.preventDefault();const ig=$("#oIg").value.trim(),c=$("#oContact").value.trim(),h=parseHandle(ig);
+  if(!h||!c){$("#oHint").textContent=t("f_err");$("#oHint").classList.add("err");return}
+  $("#oHint").textContent="";$("#oHint").classList.remove("err");orderDone={h,c,g:+$("#oGoal").value,m:$("#oMsg").value.trim()};renderDone();
+});
+function buildMsg(){
+  let s=tpl(t("msg"),{ig:"instagram.com/"+orderDone.h,goal:t("q7o")[orderDone.g],c:orderDone.c});
+  if(lastResult&&A.handle===orderDone.h)s+="\n"+tpl(t("msg_score"),{s:lastResult.total});
+  if(orderDone.m)s+="\n"+tpl(t("msg_extra"),{m:orderDone.m});
+  return s;
+}
+function renderDone(){
+  const box=$("#doneBox"),msg=buildMsg();
+  $("#orderForm").hidden=true;box.hidden=false;
+  box.innerHTML=`<div class="done q-anim"><span class="mono" style="color:var(--good)">✓ ${esc(t("done_h"))}</span><h3>${esc(t("done_h"))}</h3>
+   <p style="margin:0;color:var(--ink-soft)">${esc(tpl(t("done_p"),{h:CONTACT_IG}))}</p>
+   <pre id="msgTxt">${esc(msg)}</pre>
+   <div class="acts"><button class="btn" type="button" id="cpy">${esc(t("copy"))}</button>
+   <a class="btn ghost" href="https://ig.me/m/${CONTACT_IG}" target="_blank" rel="noopener">${esc(t("open"))} ↗</a>
+   <button class="btn ghost" type="button" id="editO">${esc(t("edit"))}</button></div>
+   <p class="hint" id="cpyHint">instagram.com/${CONTACT_IG}</p></div>`;
+  $("#cpy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(msg);$("#cpy").textContent=t("copied")}catch(err){$("#cpyHint").textContent=t("copy_fail");const r=document.createRange();r.selectNodeContents($("#msgTxt"));const s=getSelection();s.removeAllRanges();s.addRange(r)}});
+  $("#editO").addEventListener("click",()=>{orderDone=null;box.hidden=true;$("#orderForm").hidden=false;$("#oIg").focus()});
+}
+
+/* boot: start the tool at step 0, examples open on the first account */
+applyLang();
+</script>
+</body>
+</html>
